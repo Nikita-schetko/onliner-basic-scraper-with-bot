@@ -1,7 +1,18 @@
 // load in puppeteer
 const puppeteer = require('puppeteer');
+const fs = require('fs')
 const cheerio = require('cheerio');
+const TelegramBot = require('node-telegram-bot-api');
+
 const { performance } = require('perf_hooks');
+
+try {
+  var tgToken = JSON.parse(fs.readFileSync('config.json', 'utf8')).telegramBotToken;
+} catch (error) {
+  console.log('Error: Please define tgToken');
+}
+
+console.log(tgToken);
 
 const DEFAULT_STEP = 25;
 
@@ -92,7 +103,7 @@ void (async () => {
     const endTime = performance.now();
     console.log("Scraping tooked " + Math.round(endTime - startTime)/1000 + " seconds.");
 
-    const fs = require('fs')
+    
     console.log(scrapedData.length);
     fs.writeFile(
       './json/teams.json',
@@ -107,4 +118,30 @@ void (async () => {
     // display the error message in console
     console.log(error)
   }
-})()
+})();
+
+
+var bot = new TelegramBot(tgToken, {polling: true});
+
+bot.onText(/\/start/, function (msg, match) {
+    var chatId = msg.chat.id;
+    var resp = match[1] ? match[1] : 'empty message' ;
+    bot.sendMessage(chatId, resp);
+});
+
+bot.onText(/\/showOnlinerAd/, function (msg, match) {
+  var chatId = msg.chat.id;
+  // var resp = match[1] ? match[1] : 25 ;
+  bot.sendMessage(chatId, JSON.stringify(scrapedData.shift()));
+});
+
+// Простая команда без параметров.
+bot.on('message', function (msg) {
+    bot.sendMessage(msg.chat.id, 'Received your message');
+    // Фотография может быть: путь к файлу, поток(stream) или параметр file_id
+    // var photo = 'cats.png';
+    // bot.sendPhoto(chatId, photo, {caption: 'Милые котята'});
+});
+
+
+

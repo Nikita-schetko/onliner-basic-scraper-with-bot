@@ -6,6 +6,10 @@ npm-debug.log
 package-lock.json
 .cache
 
+
+# config
+config.json
+
 # builds
 dist
 build
