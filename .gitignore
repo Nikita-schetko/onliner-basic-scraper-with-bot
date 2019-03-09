@@ -7,8 +7,9 @@ package-lock.json
 .cache
 
 
-# config
+# config and other temp data
 config.json
+/json
 
 # builds
 dist
