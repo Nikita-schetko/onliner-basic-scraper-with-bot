@@ -40,8 +40,7 @@ exports.scrape = async function puppeteerOnlinerScraper({ writeToJson }) {
         // create a new browser instance
         scrapedData = [];
         const startTime = performance.now();
-        const browser = await puppeteer.launch({ headless: true });
-
+        const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
         // create a page inside the browser
         const page = await browser.newPage();
         page.setRequestInterception(true);
@@ -83,8 +82,8 @@ async function scrapeOnlinerData(page) {
     for (let i = 0; i <= options.amountOfScrapedAds; i += DEFAULT_STEP) {
 
         // grab onliner data
-        await page.goto('https://baraholka.onliner.by/search.php?q=macbook+pro+15&f=&cat=1&topicTitle=1&start=' + i);
-        //   await page.goto('https://baraholka.onliner.by/search.php?q=iphone&f=&cat=1&topicTitle=0&start=' + i);
+        // await page.goto('https://baraholka.onliner.by/search.php?q=macbook+pro+15&f=&cat=1&topicTitle=1&start=' + i);
+          await page.goto('https://baraholka.onliner.by/search.php?q=iphone&f=&cat=1&topicTitle=1&start=' + i);
         const pageContent = await page.content();
         var $ = cheerio.load(pageContent);
         // console.log($('table.ba-tbl-list__table tr').length)

@@ -28,12 +28,12 @@ var server = app.listen(process.env.PORT, '0.0.0.0', () => {
   console.log('Web server started at http://%s:%s', host, port);
 });
 
-
-try {
-  var tgToken = JSON.parse(fs.readFileSync('config.json', 'utf8')).telegramBotToken;
-} catch (error) {
-  console.log('Error: Please define tgToken in config.json (Probably, file is not exists');
-}
+var tgToken = process.env.TOKEN;
+// try {
+//   var tgToken = JSON.parse(fs.readFileSync('config.json', 'utf8')).telegramBotToken;
+// } catch (error) {
+//   console.log('Error: Please define tgToken in config.json (Probably, file is not exists');
+// }
 
 console.log(tgToken);
 
@@ -47,21 +47,30 @@ setInterval(() => {
     scrapedData = data;
     notifyUsersAboutNewAD();
   });
-}, 900000);
+}, 450000);
 
 
-var bot = new TelegramBot(tgToken, {polling: true});
+var bot = new TelegramBot(tgToken, { polling: true });
 
 bot.onText(/\/start/, function (msg, match) {
-    var chatId = msg.chat.id;
+  var chatId = msg.chat.id;
+  if (usersToNotify.includes(chatId)) bot.sendMessage(chatId, 'Already started for user: ' + chatId);
+  else {
     usersToNotify.push(chatId);
     bot.sendMessage(chatId, 'Sending ads started... user: ' + chatId);
+  }
 });
 
 bot.onText(/\/stop/, function (msg, match) {
   var chatId = msg.chat.id;
-  usersToNotify.splice(usersToNotify.indexOf(chatId), 1);
-  bot.sendMessage(chatId, 'Sending ads stopped for user: ' + chatId + ' ;' );
+  if (usersToNotify.includes(chatId)) {
+    usersToNotify.splice(usersToNotify.indexOf(chatId), 1);
+    bot.sendMessage(chatId, 'Sending ads stopped for user: ' + chatId + ' ;');
+  }
+  else {
+    bot.sendMessage(chatId, 'Ads for user already stopped;');
+  }
+
 });
 
 bot.onText(/\/showOnlinerAd/, function (msg, match) {
