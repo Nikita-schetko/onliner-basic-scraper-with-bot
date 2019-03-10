@@ -1,4 +1,7 @@
 // load in puppeteer
+const express = require('express');
+const bodyParser = require('body-parser');
+const packageInfo = require('./package.json');
 
 const TelegramBot = require('node-telegram-bot-api');
 const dedent = require('dedent');
@@ -6,6 +9,25 @@ const fs = require('fs');
 const scraper = require('./scraper');
 
 const ONLINER_BASE_URL = 'https://baraholka.onliner.by/';
+
+const app = express();
+app.use(bodyParser.json());
+
+app.get('/', function (req, res) {
+  if(scrapedData) {
+    res.json({ scrapedDataLength: scrapedData.length,
+    lastAd: JSON.stringify(scrapedData[scrapedData.length-1])
+    }); 
+  } 
+  else res.json({ version: packageInfo.version });
+});
+
+var server = app.listen(process.env.PORT, '0.0.0.0', () => {
+  const host = server.address().address;
+  const port = server.address().port;
+  console.log('Web server started at http://%s:%s', host, port);
+});
+
 
 try {
   var tgToken = JSON.parse(fs.readFileSync('config.json', 'utf8')).telegramBotToken;
