@@ -10,28 +10,36 @@ const ONLINER_BASE_URL = 'https://baraholka.onliner.by/';
 try {
   var tgToken = JSON.parse(fs.readFileSync('config.json', 'utf8')).telegramBotToken;
 } catch (error) {
-  console.log('Error: Please define tgToken');
+  console.log('Error: Please define tgToken in config.json (Probably, file is not exists');
 }
 
 console.log(tgToken);
 
 var scrapedData = [];
+var usersToNotify = [];
 
-scraper.scrape(true);
+scraper.scrape({writeToJson: false});
 
 setInterval(() => {
-  scraper.scrape(true).then((data)=>{
+  scraper.scrape({ writeToJson: false }).then((data) => {
     scrapedData = data;
+    notifyUsersAboutNewAD();
   });
-}, 30000);
+}, 900000);
 
 
 var bot = new TelegramBot(tgToken, {polling: true});
 
 bot.onText(/\/start/, function (msg, match) {
     var chatId = msg.chat.id;
-    launchAdsSender(chatId);
-    bot.sendMessage(chatId, 'Sending ads started...');
+    usersToNotify.push(chatId);
+    bot.sendMessage(chatId, 'Sending ads started... user: ' + chatId);
+});
+
+bot.onText(/\/stop/, function (msg, match) {
+  var chatId = msg.chat.id;
+  usersToNotify.splice(usersToNotify.indexOf(chatId), 1);
+  bot.sendMessage(chatId, 'Sending ads stopped for user: ' + chatId + ' ;' );
 });
 
 bot.onText(/\/showOnlinerAd/, function (msg, match) {
@@ -41,24 +49,40 @@ bot.onText(/\/showOnlinerAd/, function (msg, match) {
 });
 
 // Простая команда без параметров.
-bot.on('message', function (msg) {
-    bot.sendMessage(msg.chat.id, 'Received your message');
-    // Фотография может быть: путь к файлу, поток(stream) или параметр file_id
-    // var photo = 'cats.png';
-    // bot.sendPhoto(chatId, photo, {caption: 'Милые котята'});
-});
+// bot.on('message', function (msg) {
+//     bot.sendMessage(msg.chat.id, 'Received your message');
+//     // Фотография может быть: путь к файлу, поток(stream) или параметр file_id
+//     // var photo = 'cats.png';
+//     // bot.sendPhoto(chatId, photo, {caption: 'Милые котята'});
+// });
 
-function launchAdsSender(chatId) {
-  var currentInterval = setInterval(() => {
-    if (scrapedData.length == 24) clearInterval(currentInterval);
-    let currentAd = scrapedData.shift();
-    let msg = dedent(
-      `<a href="${ONLINER_BASE_URL + currentAd.url}">${currentAd.title}</a>  <b>${currentAd.price}</b>
+function notifyUsersAboutNewAD() {
+  if(usersToNotify.length === 0 || scrapedData.length === 0) return;
+
+  for (let i = 0; i < scrapedData.length; i++) {
+    var currentAd = scrapedData[i];
+    for (let u = 0; u < usersToNotify.length; u++) {
+      var chatId = usersToNotify[u];
+      let msg = dedent(
+        `<a href="${ONLINER_BASE_URL + currentAd.url}">${currentAd.title}</a>  <b>${currentAd.price}</b>
     ${currentAd.desc}
     ${currentAd.author}`);
-    bot.sendMessage(chatId, msg, {parse_mode: 'HTML', disable_web_page_preview: true});
-  }, 1000);
-  
+      bot.sendMessage(chatId, msg, { parse_mode: 'HTML', disable_web_page_preview: true });
+    }
+  }
 }
+
+// function launchAdsSender(chatId) {
+//   var currentInterval = setInterval(() => {
+//     if (scrapedData.length == 24) clearInterval(currentInterval);
+//     let currentAd = scrapedData.shift();
+//     let msg = dedent(
+//       `<a href="${ONLINER_BASE_URL + currentAd.url}">${currentAd.title}</a>  <b>${currentAd.price}</b>
+//     ${currentAd.desc}
+//     ${currentAd.author}`);
+//     bot.sendMessage(chatId, msg, {parse_mode: 'HTML', disable_web_page_preview: true});
+//   }, 1000);
+  
+// }
 
 
